@@ -1,0 +1,11 @@
+spring:
+  application.name: tracker-server
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url:
+    username:
+    password:
+  jpa:
+    hibernate:
+      ddl-auto: update
+      show-sql: true
