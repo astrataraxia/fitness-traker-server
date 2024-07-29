@@ -14,14 +14,14 @@ public class ActivityServiceImpl implements ActivityService{
 
     @Override
     public ActivityDTO postActivity(ActivityDTO dto) {
-        Activity activity = Activity.builder()
+        Activity save = activityRepository.save(Activity.builder()
                 .date(dto.date())
                 .steps(dto.steps())
                 .distance(dto.distance())
                 .caloriesBurned(dto.caloriesBurned())
-                .build();
+                .build());
 
-        return ActivityDTO.responseActivity(activity);
+        return ActivityDTO.responseActivity(save);
     }
 
 }
