@@ -1,15 +1,16 @@
 package com.fitness.tracker_server.controller;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fitness.tracker_server.dto.ActivityDTO;
-import com.fitness.tracker_server.services.activity.ActivityService;
+import com.fitness.tracker_server.entity.Activity;
+import com.fitness.tracker_server.repository.ActivityRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
@@ -17,12 +18,11 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @SpringBootTest
@@ -38,16 +38,17 @@ class ActivityControllerTest {
     @Autowired
     private WebApplicationContext context;
 
-    @MockBean
-    ActivityService activityService;
+    @Autowired
+    ActivityRepository activityRepository;
 
     @BeforeEach
     public void mockMvcSetUp() {
         this.mockMvc = MockMvcBuilders.webAppContextSetup(context)
                 .build();
+        activityRepository.deleteAll();
     }
 
-    @DisplayName("PostActivity: 성공해서 Activity 정보를 반환한다.")
+    @DisplayName("PostActivity: 정보를 생성하여,저장후 반환")
     @Test
     public void successPostActivity() throws Exception {
         //given
@@ -58,15 +59,6 @@ class ActivityControllerTest {
                 100);
 
         String json = objectMapper.writeValueAsString(inputDTO);
-
-        ActivityDTO outputDTO = new ActivityDTO(1L,
-                inputDTO.date(),
-                inputDTO.steps(),
-                inputDTO.distance(),
-                inputDTO.caloriesBurned());
-
-        when(activityService.postActivity(any(ActivityDTO.class))).thenReturn(outputDTO);
-
 
         // When
         MvcResult result = mockMvc.perform(post("/api/activity")
@@ -86,24 +78,43 @@ class ActivityControllerTest {
         assertThat(response.caloriesBurned()).isEqualTo(inputDTO.caloriesBurned());
     }
 
-    @DisplayName("PostActivity: 실패 메시지를 반환한다.")
+    @DisplayName("getActivities: 저장된 모든 활동 정보를 반환")
     @Test
-    public void failPostActivity() throws Exception {
-        ActivityDTO inputDTO = new ActivityDTO(null,
-                LocalDateTime.now(),
-                1000,
-                1.5,
-                100);
-        String json = objectMapper.writeValueAsString(inputDTO);
+    public void successGetActivities() throws Exception {
+        // Given
+        Activity inputActivity1 = Activity.builder()
+                .date(LocalDateTime.now())
+                .steps(1)
+                .distance(1.0)
+                .caloriesBurned(100)
+                .build();
+        Activity inputActivity2 = Activity.builder()
+                .date(LocalDateTime.now().plusDays(1))
+                .steps(1)
+                .distance(1.0)
+                .caloriesBurned(100)
+                .build();
 
-        // ActivityService가 null을 반환하도록 설정
-        when(activityService.postActivity(any(ActivityDTO.class))).thenReturn(null);
+        activityRepository.save(inputActivity1);
+        activityRepository.save(inputActivity2);
 
-        // When & Then
-        mockMvc.perform(post("/api/activity")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(json))
-                .andExpect(status().isInternalServerError())
-                .andExpect(content().string("some thing went wrong"));
+        // When
+        MvcResult result = mockMvc.perform(get("/api/activities")
+                        .contentType(MediaType.APPLICATION_JSON_VALUE))
+                .andExpect(status().isOk())
+                .andReturn();
+
+        // Then
+        List<ActivityDTO> responseList = objectMapper.readValue(result.getResponse().getContentAsString(),
+                new TypeReference<List<ActivityDTO>>() {});
+
+        assertThat(responseList).hasSize(2);
+        assertThat(responseList).extracting(ActivityDTO::steps)
+                .containsExactlyInAnyOrder(inputActivity1.getSteps(), inputActivity2.getSteps());
+        assertThat(responseList).extracting(ActivityDTO::distance)
+                .containsExactlyInAnyOrder(inputActivity1.getDistance(), inputActivity2.getDistance());
+        assertThat(responseList).extracting(ActivityDTO::caloriesBurned)
+                .containsExactlyInAnyOrder(inputActivity1.getCaloriesBurned(), inputActivity2.getCaloriesBurned());
     }
+
 }

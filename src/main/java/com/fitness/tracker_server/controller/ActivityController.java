@@ -7,6 +7,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/api")
 @CrossOrigin("*")
@@ -16,14 +18,13 @@ public class ActivityController {
     private final ActivityService activityService;
 
     @PostMapping("/activity")
-    public ResponseEntity<?> postActivity(@RequestBody ActivityDTO dto) {
+    public ResponseEntity<ActivityDTO> postActivity(@RequestBody ActivityDTO dto) {
         ActivityDTO createActivity = activityService.postActivity(dto);
+        return ResponseEntity.status(HttpStatus.CREATED).body(createActivity);
+    }
 
-        if(createActivity != null) {
-            return ResponseEntity.status(HttpStatus.CREATED).body(createActivity);
-        }
-
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body("some thing went wrong");
+    @GetMapping("/activities")
+    public ResponseEntity<List<ActivityDTO>> getActivities() {
+        return ResponseEntity.ok(activityService.getActivities());
     }
 }
