@@ -1,12 +1,16 @@
 package com.fitness.tracker_server.entity;
 
+import com.fitness.tracker_server.dto.ActivityDTO;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
+import lombok.Builder;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 
 @Entity
+@Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Activity {
 
@@ -22,4 +26,11 @@ public class Activity {
 
     private int caloriesBurned;
 
+    @Builder
+    private Activity(int caloriesBurned, LocalDateTime date, double distance, int steps) {
+        this.caloriesBurned = caloriesBurned;
+        this.date = date;
+        this.distance = distance;
+        this.steps = steps;
+    }
 }
