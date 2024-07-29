@@ -2,7 +2,6 @@ package com.fitness.tracker_server.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fitness.tracker_server.dto.ActivityDTO;
-import com.fitness.tracker_server.repository.ActivityRepository;
 import com.fitness.tracker_server.services.activity.ActivityService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -39,9 +38,6 @@ class ActivityControllerTest {
     @Autowired
     private WebApplicationContext context;
 
-    @Autowired
-    ActivityRepository activityRepository;
-
     @MockBean
     ActivityService activityService;
 
@@ -49,7 +45,6 @@ class ActivityControllerTest {
     public void mockMvcSetUp() {
         this.mockMvc = MockMvcBuilders.webAppContextSetup(context)
                 .build();
-        activityRepository.deleteAll();
     }
 
     @DisplayName("PostActivity: 성공해서 Activity 정보를 반환한다.")
